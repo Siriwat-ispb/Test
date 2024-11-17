@@ -13,29 +13,15 @@ class ActorMap{
     private TreeMap<String, LinkedHashSet<String>> workingMap;
     private LinkedHashSet<String> resultSet;
 
-    private int TotalActor = 0;
-    private int TotalMovie = 0;
-
-    
-
     public ActorMap() {     // Constructor
         workingMap = new TreeMap<>();
         resultSet = new LinkedHashSet<>();
-    }
-
-    public int getTotalActor(){
-        return TotalActor;
-    }
-
-    public int getTotalMovie(){
-        return TotalMovie;
     }
 
     public void addMovieActor(String movie, ArrayList<String> actors) {
         for (String actor : actors) {
             if (!workingMap.containsKey(actor)) {
                 workingMap.put(actor, new LinkedHashSet<>());
-                TotalActor++;
             }
             workingMap.get(actor).add(movie);
         }
@@ -73,7 +59,25 @@ class ActorMap{
         } 
     }
 
+    public static int askInput() {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("\n===============================================================");
+        System.out.println("   Find movies >> 0 = Set initial actors");
+        System.out.println("                  1 = Contain actors");
+        System.out.println("                  2 = Without actors");
+        System.out.println("              Other = Quit");
+
+        try {
+            int input = Integer.parseInt(scanner.nextLine());
+            return input;
+        } catch (NumberFormatException e) {return -1;}
+    }
+
     public void printworkingMap() {
+        int TotalActor = workingMap.size();
+        HashSet<String> TotalMovie = new HashSet<>();
+
         for (Map.Entry<String, LinkedHashSet<String>> entry : workingMap.entrySet()) {
             String actor = entry.getKey();
             LinkedHashSet<String> movies = entry.getValue();
@@ -82,13 +86,10 @@ class ActorMap{
 
             for (String movie : movies) {
                 System.out.printf(" >> %-15s", movie);
+                TotalMovie.add(movie);
             }
         }
-    }
-
-    public void printTotalCount(){
-        // System.out.println("Total movies = " + TotalMovie); dk where to put ts
-        System.out.println("Total actors = " + TotalActor); // correct
+        System.out.println("Total movies = " + TotalMovie);
     }
 }
 
@@ -113,7 +114,18 @@ public class Main{
             }
             filescanner.close();
         }catch (FileNotFoundException e) {e.printStackTrace();}
-        AM.printTotalCount();
         AM.printworkingMap();
-    }
+
+         while (true) {
+            int input = AM.askInput();
+            
+            if (input == 0) { AM.initialActors(); }
+            else if (input == 1) { AM.containActors(); }
+            else if (input == 2) { AM.withoutActors(); }
+            else {
+                System.out.println("Exiting the program...");
+                break;
+            }
+        }
+    }     
 }
