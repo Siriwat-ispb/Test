@@ -1,4 +1,4 @@
-// p Ex8_6581098;
+// p Ex8_6581167;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -124,7 +124,7 @@ class ActorMap {
 } 
 
 
-public class Main {
+public class Blue {
     public static void main(String args[]) {
         ActorMap actorMap = new ActorMap();
 
