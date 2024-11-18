@@ -1,4 +1,4 @@
-// p Ex8_6581167;
+// package Ex8_6581167;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -55,7 +55,7 @@ class ActorMap {
             }
             System.out.println();
         }
-        System.out.println("\nResult = " + totalMovies);
+        System.out.println("\nResult = " + totalActors);
         System.out.printf("\nTotal movies = %d\n", totalMovies.size());
     }
 
@@ -163,7 +163,7 @@ public class Blue {
         System.out.println("Find movies >> 0 = Set initial actors");
         System.out.println("               1 = Contain actors");
         System.out.println("               2 = Without actors");
-        System.out.println("           Other = Quit");
+        System.out.println("               Other = Quit");
 
         try {
             choice = Integer.parseInt(scanner.nextLine());  // Select choice
