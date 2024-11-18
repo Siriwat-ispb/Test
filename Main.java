@@ -1,4 +1,5 @@
-// p Ex8_6581098;
+package Ex8_6581098;
+//Siriwat Ittisompiboon 6581098
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -129,7 +130,7 @@ public class Main {
         ActorMap actorMap = new ActorMap();
 
         try {
-            Scanner fileScanner = new Scanner(new File("/workspaces/Test/movies.txt"));
+            Scanner fileScanner = new Scanner(new File("/src/main/java/Ex8_6581098/movies.txt"));
             while (fileScanner.hasNextLine()) {      
                 String line = fileScanner.nextLine();
                 String[] data = line.split(";");
