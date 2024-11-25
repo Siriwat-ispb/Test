@@ -15,8 +15,7 @@ public class Main {
     public static void main(String args[]) {
         Scanner scanner = new Scanner(System.in);
         ActorGraph actorGraph = new ActorGraph();
-        String filePath = "/workspaces/Test/movies.txt";
-        // String filePath = "/src/main/java/Ex9_6581167/movies.txt";
+        String filePath = "/src/main/java/Ex9_6581098/movies.txt";
 
         actorGraph.buildGraph(filePath);
         actorGraph.baconParties();
