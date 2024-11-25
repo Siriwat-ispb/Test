@@ -1,19 +1,109 @@
-package Ex8_6581098;
-//Siriwat Ittisompiboon 6581098
+// p Ex9_6581098;
+
+// Siriwat Ittisompiboon 6581098
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
+import org.jgrapht.*;
+import org.jgrapht.graph.*;
+import org.jgrapht.alg.color.*;
 
-class ActorMap { 
-    // Key = actor, Value = set of movies 
-    // Java's String already has consistent equals & compareTo for equality check 
-    private TreeMap<String, LinkedHashSet<String>> workingMap; 
+
+
+public class Main {
+    public static void main(String args[]) {
+        Scanner scanner = new Scanner(System.in);
+        ActorGraph actorGraph = new ActorGraph();
+        String filePath = "/workspaces/Test/movies.txt";
+        // String filePath = "/src/main/java/Ex9_6581098/movies.txt";
+
+        actorGraph.buildGraph(filePath);
+        actorGraph.baconParties();
+
+        while (true) {
+            if (!askInput(actorGraph, scanner)) {
+                System.out.println("Exiting Program...");
+                break;
+            }
+        }
+        scanner.close();
+    }
+
+    public static boolean askInput(ActorGraph actorGraph, Scanner scanner) {
+        System.out.println("Enter name or surname, or 0 to quit");
+        String userInput[] = scanner.nextLine().split(",");
+          
+        if (userInput[0].contains("0")) return false;
+
+        HashSet<String> chosenActor = new HashSet<>();
+        for (int i=0; i<userInput.length; i++) {
+            chosenActor.add(userInput[i].trim());
+        }
+
+        actorGraph.findActor(chosenActor); 
+        actorGraph.baconDegree();
+        return true;
+    }
+}
+
+
+
+class ActorGraph {
+    private Graph<String, DefaultEdge> costarGraph;     
+    private GreedyColoring<String, DefaultEdge> conflictGraph;
+
+    private TreeMap<String, LinkedHashSet<String>> workingMap;
     private LinkedHashSet<String> resultSet;
 
-    public ActorMap() {   
-        workingMap = new TreeMap<>();
-        resultSet = new LinkedHashSet<>();
+    public static final String BACON = "Kevin Bacon";
+
+    public ActorGraph() {
+        this.costarGraph = new SimpleGraph<>(DefaultEdge.class);
+        this.workingMap = new TreeMap<>();
+        this.resultSet = new LinkedHashSet<>();
+    }
+
+    public void buildGraph(String fileName) {
+        try {
+            Scanner fileScanner = new Scanner(new File(fileName));
+
+            while (fileScanner.hasNextLine()) {      
+                String line = fileScanner.nextLine().trim();
+                String[] data = line.split(";");    
+                String movie = data[0];
+
+                HashSet<String> actors = new HashSet<>();
+                for (int i=1; i < data.length; i++) {
+                    actors.add(data[i]);
+                }
+                addMovieActor(movie, actors);
+
+                for (int i=1; i<data.length; i++) {  
+                    costarGraph.addVertex(data[i]);
+                    for (int j=1; j<i; j++) {
+                        costarGraph.addEdge(data[i], data[j]);
+                    }
+                }
+            }
+            Graph<String, DefaultEdge> tempGraph = new SimpleGraph<>(DefaultEdge.class);
+            for (String vertex : costarGraph.vertexSet()) { 
+                tempGraph.addVertex(vertex);
+            }
+            for (DefaultEdge edge : costarGraph.edgeSet()) {  
+                String source = costarGraph.getEdgeSource(edge);
+                String target = costarGraph.getEdgeTarget(edge);
+                tempGraph.addEdge(source, target);
+            }
+            tempGraph.removeVertex(BACON);
+
+            conflictGraph = new GreedyColoring<>(tempGraph);
+            fileScanner.close();
+        }
+        catch (FileNotFoundException e){
+            System.out.printf("Error: File not found (%s)\n", fileName);
+            e.printStackTrace();
+        }
     }
 
     public void addMovieActor(String movie, HashSet<String> actors) {
@@ -25,172 +115,101 @@ class ActorMap {
         }
     }
 
-    public void initialActors(HashSet<String> chosenActor) {
-        resultSet.clear();     
-        for (String input : chosenActor) {   
+    public void findActor(HashSet<String> chosenActor) {
+        resultSet.clear();
+        for (String input : chosenActor) { 
             for (String actor : workingMap.keySet()) {
                 if (actor.toLowerCase().contains(input.toLowerCase())) {
                     resultSet.add(actor);
                 }
             }
         }
-
-        HashSet<String> totalMovies = new HashSet<>();
-        System.out.println("Valid input actors = " + resultSet + "\n");
-
-        for (String actor : resultSet) { 
-            LinkedHashSet<String> movies = workingMap.get(actor);
-            totalMovies.addAll(movies); 
-
-            System.out.printf("%20s", actor);
-            for (String movie : movies) {
-                System.out.printf("  >>  %-25s", movie);
-            }
-            System.out.println();
-        }
-        System.out.println("\nResult = " + totalMovies);
-        System.out.printf("\nTotal movies = %d\n", totalMovies.size());
     }
 
-    public void containActors(HashSet<String> chosenActor) {
+    public void baconDegree() { 
+        System.out.println("============================== Bacon degrees ==============================");
+        System.out.println("Valid actors = " + resultSet);
+        System.out.println();
+        for (String actor : resultSet) {
+            String start = actor;
+            String target = "Kevin Bacon";
 
-        HashSet<String> TActors = new HashSet<>();
-        for (String input : chosenActor) {
-            for (String actor : resultSet) {
-                if (actor.toLowerCase().contains(input.toLowerCase())) {
-                TActors.add(actor);
+            LinkedList<String> queue = new LinkedList<>();
+            queue.add(start);
+
+            Set<String> visited = new HashSet<>();
+            visited.add(start);
+
+            Map<String, String> parentMap = new HashMap<>();
+            boolean found = false;
+
+            while (!queue.isEmpty() && !found) {
+                String current = queue.poll();
+
+                for (DefaultEdge edge : costarGraph.edgesOf(current)) {
+                    String neighbor = costarGraph.getEdgeSource(edge).equals(current)
+                        ? costarGraph.getEdgeTarget(edge)
+                        : costarGraph.getEdgeSource(edge);
+                    
+                    if (!visited.contains(neighbor)) {
+                        visited.add(neighbor);
+                        parentMap.put(neighbor, current);
+                        queue.add(neighbor);
+
+                        if (neighbor.equals(target)) {
+                            found = true;
+                            break;
+                        }
+                    }
                 }
             }
-        }
 
-        boolean isFirstActor = true;
-        HashSet<String> TMovies = new HashSet<>();
-        System.out.println("Valid input actors = " + TActors + "\n");
-        for (String actor : TActors) { 
-            LinkedHashSet<String> movies = workingMap.get(actor);
-
-            System.out.printf("%20s", actor); 
-            for (String movie : movies) {
-                System.out.printf("  >>  %-25s", movie);
-            }
-            System.out.println();
-
-            if (isFirstActor) {   
-                TMovies.addAll(movies);
-                isFirstActor = false;
-            } else TMovies.retainAll(movies);
-        }
-
-        System.out.println("\nResult = " + TMovies);
-        System.out.printf("\nTotal movies = %d\n", TMovies.size());
-    }
-     
-    public void withoutActors(HashSet<String> chosenActor) {
-
-        HashSet<String> TActors = new HashSet<>();
-        HashSet<String> TMovies = new HashSet<>();
-        for (String input : chosenActor) {
-            for (String actor : resultSet) {
-                TMovies.addAll(workingMap.get(actor));
-                if (actor.toLowerCase().contains(input.toLowerCase())) {
-                TActors.add(actor);
+            List<String> path = new LinkedList<>();
+            if (found) {
+                String current = target;
+                while (current != null) {
+                    path.add(0, current);
+                    current = parentMap.get(current);
                 }
-            }
-        }
-        System.out.println("Valid input actors = " + TActors + "\n");
+                    // PRINT
+                System.out.printf("%s  >>  Bacon degree = %d\n\n", start, path.size()-1);
+                for (int i=0; i<path.size()-1; i++) {
+                    String actor1 = path.get(i);
+                    String actor2 = path.get(i+1);
 
-        for (String actor : TActors) { 
-            LinkedHashSet<String> movies = workingMap.get(actor);
+                    Set<String> movieActor1 = workingMap.get(actor1);
+                    Set<String> movieActor2 = workingMap.get(actor2);
 
-            System.out.printf("%20s", actor);    
-            for (String movie : movies) {
-                System.out.printf("  >>  %-25s", movie);
-            }
-            System.out.println();
+                    Set<String> sharedMovie = new HashSet<>(movieActor1);
+                    sharedMovie.retainAll(movieActor2);
 
-            TMovies.removeAll(movies);  
-        }
-
-        System.out.println("\nResult = " + TMovies);   
-        System.out.printf("\nTotal movies = %d\n", TMovies.size());   
-    }
-
-    public void printWorkingMap() {     
-        HashSet<String> totalMovies = new HashSet<>();
-
-        for (Map.Entry<String, LinkedHashSet<String>> entry : workingMap.entrySet()) { 
-            String actor = entry.getKey();
-            LinkedHashSet<String> movies = entry.getValue();
-
-            System.out.printf("\n%20s", actor);
-            for (String movie : movies) {
-                System.out.printf("  >>  %-25s", movie);
-                totalMovies.add(movie);
-            }
-        }
-        System.out.printf("\n\nTotal Movies = %d\nTotal Actors = %d\n", totalMovies.size(), workingMap.size());
-    }
-}
-
-public class Main {
-    public static void main(String args[]) {
-        ActorMap actorMap = new ActorMap();
-
-        try {
-            Scanner fileScanner = new Scanner(new File("/src/main/java/Ex8_6581098/movies.txt"));
-            while (fileScanner.hasNextLine()) {         
-                String line = fileScanner.nextLine();
-                String[] data = line.split(";");
-                
-                String movie = data[0].trim();
-                HashSet<String> actors = new HashSet<>();
-                for (int i=1; i < data.length; i++) {   
-                    actors.add(data[i].trim());
+                    System.out.printf("%20s - %-20s %s\n", actor1, actor2, sharedMovie);
                 }
-                actorMap.addMovieActor(movie, actors);
-            }
-            fileScanner.close();
-        } catch (FileNotFoundException e) { e.printStackTrace(); }
-
-        actorMap.printWorkingMap();    
-
-        Scanner scanner = new Scanner(System.in);
-        while (true) {     
-            if (!askInput(actorMap, scanner)) {
-                System.out.println("Exiting Program...");
-                break;
+                System.out.println();
+            } else {
+                System.out.println("Connection not found");
             }
         }
-        return;
+        System.out.println("============================== Bacon degrees ==============================");
     }
 
-    public static boolean askInput(ActorMap actorMap, Scanner scanner) {
-        int choice;
-        System.out.println("=======================================================================");
-        System.out.println("Find movies >> 0 = Set initial actors");
-        System.out.println("               1 = Contain actors");
-        System.out.println("               2 = Without actors");
-        System.out.println("               Other = Quit");
+    public void baconParties() {
+        List<Set<String>> colorList = conflictGraph.getColoring().getColorClasses();
 
-        try {
-            choice = Integer.parseInt(scanner.nextLine()); 
-        } catch (NumberFormatException e) { choice = -1; }
-
-        if (choice < 0 || choice > 2) { return false; } 
-
-        HashSet<String> chosenActor = new HashSet<>();
-        System.out.printf("Add names or surnames separated by comma ',' = ");  
-        String[] actorInput = (scanner.nextLine()).split(",");
-        for (int i=0; i < actorInput.length; i++) {
-            chosenActor.add(actorInput[i].trim());
+        System.out.println("\n\n============================== Bacon parties ==============================");
+        System.out.println("By GreedyColoring  >>  total parties = " + colorList.size());
+        System.out.println();
+        for (int i=0; i<colorList.size();i++) {
+            System.out.printf("Parties %d >> guests = %d", i+1, colorList.get(i).size());
+            Set<String> colorClass = colorList.get(i);
+            int count = 0;
+            for (String actor : colorClass) {
+                if (count % 6 == 0) System.out.println();  
+                System.out.printf("%-20s", actor);
+                count++;
+            }
+            System.out.printf("\n\n");
         }
-
-        switch (choice) {
-            case 0: actorMap.initialActors(chosenActor); break;
-            case 1: actorMap.containActors(chosenActor); break;
-            case 2: actorMap.withoutActors(chosenActor); break;
-            default: break;
-        }
-        return true;  
+        System.out.println("============================== Bacon parties ==============================");
     }
 }
