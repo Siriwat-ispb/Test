@@ -47,8 +47,5 @@ public class Main{
         if(FinalMin<0){FinalMin+=60; FinalHour-=1;}
 
         System.out.printf("Duration = %1d hours, %1d minutes\n",FinalHour,FinalMin);
-
-        //System.out.println("Enter hour digit (0 - 59) = ");
-        //int Min = input.nextInt();
     }
 }
